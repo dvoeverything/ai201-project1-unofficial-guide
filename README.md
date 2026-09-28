@@ -1,0 +1,285 @@
+# The Unofficial Guide
+
+<!-- Replace this line with your name and which corpus you picked. -->
+
+> **This file is your submission.** Fill it in as you go — most sections get
+> written during the milestone that produces them, not at the end.
+>
+> How the starter works, and every command you'll need, is in `RUNNING.md`.
+> Leave that file alone.
+>
+> **Paste everything as text.** No screenshots, no video. A typed table gets
+> full credit; a picture of the same table gets none.
+>
+> Delete these instruction blocks as you replace them. The `<!-- -->` comments
+> are notes to you and don't show up when the page renders — you can leave them
+> or remove them.
+
+---
+
+# Unit 1
+
+## What This Does
+
+This system answers plain-language questions about campus life using the `campus_life` corpus: 88 short, student-written posts about courses, dining halls, residence halls, and admin rules (deadlines, housing lottery, meal plans, parking, and more). You ask something like "Is the housing lottery random?" and it retrieves the most relevant passages, answers only from them, and names the file each answer came from.
+
+## Chunking Strategy
+
+**Chunk size:** one paragraph per chunk, with the document's title line put
+in front. That gives 183 chunks, 64 to 398 characters, 168 on average.
+Produced by `chunker.py::paragraph_split`.
+
+**Overlap:** 0.
+
+**Why these choices:**
+
+- **The starter's chunker never split anything.** `fallback_split` cuts
+  800-character windows, but every file in `campus_life` is between 178 and
+  549 characters, so 88 documents became 88 chunks. Changing the window size
+  wouldn't help. The documents already have natural break points.
+- **Each file is a title line plus one to four short paragraphs, and each
+  paragraph is usually its own topic.** Some files cover two separate things,
+  like `study_library_hours.txt` (opening hours, then where to sit) and
+  `health_center.txt` (walk-in hours, then counselling). Kept whole, those
+  chunks match both kinds of question only partly. Split at blank lines, each
+  chunk covers one thing.
+- **The subject is only named in the title.** On its own, "Expect 4 hours a
+  week outside class." from `course_econ_101.txt` doesn't say which course it
+  means. Putting the title in front of every paragraph keeps the course,
+  dining hall, or building name in each chunk. Criterion 4 checks this.
+- **Overlap is 0 because paragraph breaks never cut a sentence.** Overlap
+  exists to repair sentences that a fixed window chops in half. Splitting on
+  blank lines never does that, and the title prefix already carries the
+  context a neighbouring chunk would have added.
+
+**Changed my mind:** I started out thinking one file per chunk was fine,
+since the starter already produced that. After reading the two-topic files,
+I decided to split by paragraph instead.
+**Evidence it helped:** after switching from `fallback_split` to
+`split_documents`, the espresso question's best distance improved from 0.427
+to 0.373, and the Morrow House main review moved up to #2 (0.206) for the
+laundry question, because its laundry sentence is no longer mixed in with
+the rest of the review.
+## Sample Chunks
+
+======================================================================
+Chunk 1  |  source: admin_add_drop_deadline.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+On the add/drop deadline — You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
+
+======================================================================
+Chunk 2  |  source: course_cs_340_exams.txt#1  |  produced by: chunker.py::split_documents
+======================================================================
+CS 340 Databases — assessment — Start the term project in week three, not week eight; everyone learns this the hard way.
+
+======================================================================
+Chunk 3  |  source: course_phys_130_workload.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+Workload for PHYS 130 Mechanics — People keep asking so: 7 hours a week, plus 3 on lab weeks. That's real time, not optimistic time.
+
+======================================================================
+Chunk 4  |  source: dining_verrill_street_grill_followup.txt#1  |  produced by: chunker.py::split_documents
+======================================================================
+Re: Verrill Street Grill — Also worth saying: one register, so the queue is a single line no matter how busy. Nobody tells you this at orientation.
+
+======================================================================
+Chunk 5  |  source: housing_morrow_house.txt#1  |  produced by: chunker.py::split_documents
+======================================================================
+Morrow House — what it's actually like — The good: cheapest housing tier by about $900 a year, and the singles are real singles.
+
+## Sample Answer
+
+
+
+**Question:** Is the housing lottery random for juniors and seniors?
+**Answer:**
+
+
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.1494     admin_housing_lottery.txt        On the housing lottery — The housing lottery is not ...
+2   0.6833     housing_aldridge_hall.txt        Aldridge Hall — what it's actually like — I lived he...
+3   0.6901     housing_morrow_house.txt         Morrow House — what it's actually like — The good: c...
+4   0.7015     advising_registration.txt        Registration and your adviser — Registration times a...
+5   0.7049     admin_parking_permits.txt        On the parking permits — Student permits for the wes...
+
+Gate: best distance 0.149 is under the 0.6 cutoff
+
+Lower is better. 0.3 is a close match, 0.9 is unrelated.
+Milestone 4: run your five questions, then the five in OUT_OF_SCOPE
+that your documents clearly don't cover, and look for the gap
+between the two groups. Your cutoff goes in that gap.
+
+**My relevance cutoff:** 0.6 (the starter's default, kept after measuring)
+
+I ran my five test questions and the five `OUT_OF_SCOPE` questions through
+`python app.py retrieve` and recorded the best distance for each. The two
+groups don't overlap:
+
+- **In corpus:** 0.149 to 0.416. The worst is the withdrawal question, where
+  the add/drop file (0.416) and the withdrawal file (0.424) came back almost
+  tied, because the two policies are worded so similarly.
+- **Out of scope:** 0.795 to 0.916. The closest is "What is the capital of
+  Mongolia?", which matched HIST 118 Modern World History.
+
+The gap runs from 0.416 to 0.795, and 0.6 sits roughly in the middle of it:
+about 0.18 above my worst real question and 0.19 below my closest off-topic
+one. What 0.6 would get wrong: a real question worded very differently from
+its document could land above 0.6 and be refused. The espresso question
+(0.373) shows how far wording alone can push a real question up.
+
+I expected the ibuprofen question to be the borderline case because the
+corpus has a `health_center.txt`, but it never matched that file. Its
+closest chunk was The Ridgeway Café's hours at 0.847.
+
+| Question                                                                     | In corpus? | Best distance |
+|------------------------------------------------------------------------------|------------|---------------|
+| Is the housing lottery random for juniors and seniors?                       | Yes        | 0.149         |
+| How long is the wait at Kestrel Commons during the lunch rush?               | Yes        | 0.176         |
+| What do I need to withdraw from a course after the drop deadline has passed? | Yes        | 0.416         |
+| Where on campus can I get real espresso?                                     | Yes        | 0.373         |
+| How much does it cost to dry a load of laundry in Morrow House?              | Yes        | 0.175         |
+| What is the capital of Mongolia?                                             | No         | 0.795         |
+| How do I change the oil in a diesel engine?                                  | No         | 0.916         |
+| Who won the 1994 World Cup?                                                  | No         | 0.859         |
+| What is the recommended dosage of ibuprofen for a headache?                  | No         | 0.847         |
+| How do I write a for loop in Rust?                                           | No         | 0.865         |
+
+## How I Used AI
+
+<!-- Two specific moments. For each: what you asked for, what came back, and
+     what you changed about it.
+
+     "I asked Claude to write the chunking function from my notes. It ignored
+     the overlap, so I added that myself" is the level of detail we're after.
+     "I used AI to help me code" is not.
+
+     Milestone 5. -->
+
+**1.**
+
+**2.**
+
+<!-- ── Stretch features ─────────────────────────────────────────────────────
+     Doing one? Say so here BEFORE you start. A feature this README never
+     claims earns nothing.
+     ───────────────────────────────────────────────────────────────────────── -->
+
+---
+
+# Unit 2
+
+<!-- These sections get ADDED to what's already above. Don't delete or rewrite
+     unit 1 — the point is that someone can see what you said before you knew
+     how it went. -->
+
+## Run Log — Before
+
+<!-- Your five criteria, three runs each. `python run_eval.py --label before`
+     runs the questions, puts the OUT_OF_SCOPE ones through the gate, and
+     writes it all into results/ for you. Targets come from criteria.md; the
+     verdict column is your call.
+
+     Criterion 3 is measured in one deterministic pass rather than three, so
+     the same number goes in all three run columns. That's correct, not lazy.
+
+     Milestone 1. -->
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
+| 2. Every answer names a source | 5 of 5 |  |  |  |  |
+| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
+| 4. | | | | | |
+| 5. | | | | | |
+
+<!-- Underneath, paste the REAL output for each criterion from one of your
+     runs — the actual text your system produced, not a description of it.
+     Name the file and function that produced it. -->
+
+## Verdicts
+
+<!-- MET or MISSED for each of the five, against the target you wrote last
+     unit — not a new one. Plus a sentence on how you decided. That sentence
+     matters most where it was close.
+
+     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
+     The target has to hold, not show up occasionally.
+
+     Milestone 2. -->
+
+| # | Criterion | Verdict | How I decided |
+|---|---|---|---|
+| 1 |  |  |  |
+| 2 |  |  |  |
+| 3 |  |  |  |
+| 4 |  |  |  |
+| 5 |  |  |  |
+
+## Diagnoses
+
+<!-- For each miss: which stage caused it, and how. The stage alone isn't
+     enough — you need the mechanism.
+
+     Not a diagnosis: "Question 3 didn't work."
+     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
+                       one sentence that got split across two chunks, so
+                       neither chunk on its own contains it."
+
+     The five stages: loading → chunking → embedding → retrieval → generation.
+
+     Look for a pattern. If three misses all ask about numbers, that's one
+     problem, not three.
+
+     Missed nothing? Say so, then say honestly whether your targets were set
+     low, and which one you'd tighten and to what.
+
+     Milestone 3. -->
+
+## The Improvement
+
+**What I changed:**
+
+**Why I picked it:**
+
+<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
+     you picked a fix because it sounded impressive. -->
+
+### Run Log — After
+
+<!-- Same format, same five criteria, three runs each.
+     `python run_eval.py --label after` -->
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
+| 2. Every answer names a source | 5 of 5 |  |  |  |  |
+| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
+| 4. | | | | | |
+| 5. | | | | | |
+
+**Did it help?**
+
+<!-- Say plainly whether it did, and how you know. If it made things worse,
+     say that — a change that backfired, honestly reported, earns full credit
+     and is more interesting than one that worked. What matters is that you can
+     tell.
+
+     Milestone 4. -->
+
+## What's Still Broken
+
+<!-- For each criterion still missed after your fix: what you'd do about it,
+     and why you stopped where you did.
+
+     "I ran out of time" is fine if it's true. Pretending nothing is left is
+     not.
+
+     Milestone 5. -->
+
+## What I'd Do Differently
+
+<!-- Knowing what you know now — which of your five criteria would you write
+     differently, and why?
+
+     Milestone 5. -->
