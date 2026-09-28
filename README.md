@@ -62,29 +62,19 @@ laundry question, because its laundry sentence is no longer mixed in with
 the rest of the review.
 ## Sample Chunks
 
-======================================================================
 Chunk 1  |  source: admin_add_drop_deadline.txt#0  |  produced by: chunker.py::split_documents
-======================================================================
 On the add/drop deadline — You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
 
-======================================================================
 Chunk 2  |  source: course_cs_340_exams.txt#1  |  produced by: chunker.py::split_documents
-======================================================================
 CS 340 Databases — assessment — Start the term project in week three, not week eight; everyone learns this the hard way.
 
-======================================================================
 Chunk 3  |  source: course_phys_130_workload.txt#0  |  produced by: chunker.py::split_documents
-======================================================================
 Workload for PHYS 130 Mechanics — People keep asking so: 7 hours a week, plus 3 on lab weeks. That's real time, not optimistic time.
 
-======================================================================
 Chunk 4  |  source: dining_verrill_street_grill_followup.txt#1  |  produced by: chunker.py::split_documents
-======================================================================
 Re: Verrill Street Grill — Also worth saying: one register, so the queue is a single line no matter how busy. Nobody tells you this at orientation.
 
-======================================================================
 Chunk 5  |  source: housing_morrow_house.txt#1  |  produced by: chunker.py::split_documents
-======================================================================
 Morrow House — what it's actually like — The good: cheapest housing tier by about $900 a year, and the singles are real singles.
 
 ## Sample Answer
@@ -147,23 +137,30 @@ closest chunk was The Ridgeway Café's hours at 0.847.
 
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+## How I Used AI
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
+**1. Writing the chunker.** I decided to split each file on its blank lines
+and put the title line in front of every paragraph, so a chunk like "Expect
+4 hours a week outside class" still says which course it's about. I asked
+Claude to write that function. The first version (`paragraph_split`) took a
+single string and returned plain strings, but the starter's `split_documents`
+receives a list of `Document` objects and has to return `Chunk` objects, so
+it would have crashed on `python app.py index`. I pasted my `chunker.py` back
+to Claude, and it rewrote the logic inside `split_documents` itself so it
+returns `Chunk` objects with `produced_by="chunker.py::split_documents"`. I
+kept `fallback_split` for comparison, re-indexed, and checked the summary
+line: 183 chunks, 64 to 398 characters, average 168.
 
-     Milestone 5. -->
-
-**1.**
-
-**2.**
-
-<!-- ── Stretch features ─────────────────────────────────────────────────────
-     Doing one? Say so here BEFORE you start. A feature this README never
-     claims earns nothing.
-     ───────────────────────────────────────────────────────────────────────── -->
+**2. Writing criterion 4 (chunks).** My first draft was "No chunk is shorter
+than 178 characters or longer than 549 characters." When I asked Claude for
+a reason to go with it, it pointed out that 178 and 549 were just the
+starter's own output from `python app.py index`, so the criterion described
+what had already happened and couldn't fail. I rewrote it around what a bad
+chunk actually looks like in this corpus: one that loses its course, dining
+hall, or building name. I first wrote "all but one" chunk, and picked the
+ECON 101 line as the one I'd allow to fail. Claude showed me that a chunker
+that drops the title from one course drops it from all nine at once, so a
+single failure wasn't realistic. I changed the target to "every chunk."
 
 ---
 
