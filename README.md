@@ -172,27 +172,59 @@ single failure wasn't realistic. I changed the target to "every chunk."
 
 ## Run Log — Before
 
-<!-- Your five criteria, three runs each. `python run_eval.py --label before`
-     runs the questions, puts the OUT_OF_SCOPE ones through the gate, and
-     writes it all into results/ for you. Targets come from criteria.md; the
-     verdict column is your call.
+## Run Log — Before
 
-     Criterion 3 is measured in one deterministic pass rather than three, so
-     the same number goes in all three run columns. That's correct, not lazy.
+Criteria 1–3 from `results/run_2026-09-30_1927_before.md` (`run_eval.py::main`).
+Criterion 4 from `check_criterion4.py`. Criterion 5 from the run_eval file
+(Kestrel, Morrow) and `results/criterion5_before.md` (Calder).
 
-     Milestone 1. -->
+| Criterion                                                     | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---------------------------------------------------------------|--------|-------|-------|-------|---------|
+| 1. Retrieved chunk contains the answer                        | 4 of 5 | 5/5   | 5/5   | 5/5   |         |
+| 2. Every answer names a source                                | 5 of 5 | 5/5   | 5/5   | 5/5   |         |
+| 3. Gate stops out-of-corpus questions                         | 4 of 5 | 5/5   | 5/5   | 5/5   |         |
+| 4. Chunks from course/dining/housing files name their subject | every chunk | 147/147 | 147/147 | 147/147 |       |
+| 5. Place-naming questions cite a file about that place        | 2 of 3 | 3/3   | 3/3   | 3/3   |          |
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+Criteria 3 and 4 are single deterministic measurements (the gate is a fixed
+comparison; the chunks don't change between runs), so the same number goes
+in all three columns.
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+### Real output
+
+**Criterion 1 — retrieval** (`store.py::search`), withdrawal question, run 1:
+```
+Best distance: 0.4160 (passed the gate)
+Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_pass_fail_option.txt, admin_withdrawal_deadline.txt, advising_registration.txt
+```
+
+**Criterion 2 — answer with source** (`generate.py::answer_from_chunks`), housing lottery, run 1:
+```
+No, the housing lottery is not entirely random for juniors and seniors. They are ordered by accumulated credit hours first, and random drawing is used only as a tie-breaker (admin_housing_lottery.txt).
+```
+
+**Criterion 3 — gate** (`run_eval.py::check_out_of_scope`):
+```
+| What is the capital of Mongolia? | 0.795 | refused |
+| How do I change the oil in a diesel engine? | 0.916 | refused |
+| Who won the 1994 World Cup? | 0.859 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.847 | refused |
+| How do I write a for loop in Rust? | 0.865 | refused |
+Refused 5 of 5.
+```
+
+**Criterion 4 — chunks** (`check_criterion4.py`, using `chunker.py::split_documents`):
+```
+Files checked: 62 (course, dining, housing)
+Chunks checked: 147
+Chunks that name their subject: 147 of 147
+```
+
+**Criterion 5 — right place cited** (`app.py ask`), Calder Annexe, run 2:
+```
+Laundry in Calder Annexe costs $2.00 for a wash and $1.75 for a dryer.
+Sources: `housing_calder_annexe.txt` and `housing_calder_annexe_laundry.txt`
+```
 
 ## Verdicts
 
