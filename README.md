@@ -288,39 +288,136 @@ be an honest target rather than a safe one.
 
 ### Run Log — After
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+## The Improvement
 
-| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+**What I changed:** I added hybrid search to `store.py::search`. Each chunk is
+now scored two ways: vector similarity (1 − cosine distance) and a BM25
+keyword score over stemmed words (Porter stemmer, so "withdraw" and
+"withdrawal" both become `withdraw`). Each score is rescaled to 0–1 and the
+chunks are ranked by the average. Each result still carries its real vector
+distance for the relevance gate. Setting `AI201_HYBRID=0` turns it off and
+reproduces the "before" system exactly. Nothing else changed: same chunker,
+same top-k (5), same cutoff (0.6), same prompt.
 
-**Did it help?**
+**Why I picked it:** My diagnosis found that for the withdrawal question,
+vector search ranked `admin_add_drop_deadline.txt` first (0.416) and the
+correct `admin_withdrawal_deadline.txt` second (0.424), because the two
+policies mean almost the same thing. A keyword match on "withdraw" can
+separate them, but only with stemming: plain BM25 still ranked add/drop first,
+because "withdraw" and "withdrawal" don't match as words. I also combined
+scores rather than ranks, because rank fusion (RRF) left the two files exactly
+tied.
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
+### Run Log — After
 
-     Milestone 4. -->
+Criteria 1–3 from `results/run_2026-10-05_1636_after.md`. Criterion 4 from
+`check_criterion4.py`. Criterion 5 from the after run_eval file (Kestrel,
+Morrow) and `results/criterion5_after.md` (Calder).
+
+| Criterion                                                     | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---------------------------------------------------------------|--------|-------|-------|-------|---------|
+| 1. Retrieved chunk contains the answer                        | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 2. Every answer names a source                                | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 3. Gate stops out-of-corpus questions                         | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 4. Chunks from course/dining/housing files name their subject | every chunk | 147/147 | 147/147 | 147/147 | MET |
+| 5. Place-naming questions cite a file about that place.       | 2 of 3 | 3/3   | 3/3   | 3/3   | MET     |
+
+**The measurement the fix targeted: which file ranks #1**
+(`check_top1.py`, saved in `results/top1_before.txt` and `results/top1_after.txt`):
+
+| Question | #1 before (vector only) | #1 after (hybrid) |
+|-------------------|--------------------------------|----------------------------------------------------|
+| Housing lottery   | `admin_housing_lottery.txt` ✅ | `admin_housing_lottery.txt` ✅                     |
+| Kestrel wait      | `dining_kestrel_commons_followup.txt` ✅ | `dining_kestrel_commons_followup.txt` ✅ |
+| Withdrawal        | `admin_add_drop_deadline.txt` ❌ | `admin_withdrawal_deadline.txt` ✅ |
+| Espresso          | `dining_the_ridgeway_cafe.txt` ✅ | `dining_the_ridgeway_cafe.txt` ✅ |
+| Morrow dryer      | `housing_morrow_house_laundry.txt#0` ✅ | `housing_morrow_house.txt#3` ✅ |
+| **Correct at #1** | **4 of 5** | **5 of 5** |
+
+### Real output (after)
+
+Withdrawal, run 1 (`run_eval.py::main`):
+```
+- Best distance: 0.4160 (passed the gate)
+- Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_pass_fail_option.txt, admin_withdrawal_deadline.txt, advising_registration.txt
+
+To withdraw from a course after the drop deadline, you need an adviser's signature (from admin_withdrawal_deadline.txt).
+```
+
+Calder Annexe, run 2 (`app.py ask`):
+```
+Laundry in Calder Annexe costs $2.00 to wash and $1.75 to dry (housing_calder_annexe.txt and housing_calder_annexe_laundry.txt).
+Sources retrieved: housing_calder_annexe.txt, housing_calder_annexe_laundry.txt, housing_innisfree_hall.txt
+```
+
+Gate (`run_eval.py::check_out_of_scope`):
+```
+| What is the capital of Mongolia? | 0.817 | refused |
+| How do I change the oil in a diesel engine? | 0.916 | refused |
+| Who won the 1994 World Cup? | 0.859 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.858 | refused |
+| How do I write a for loop in Rust? | 0.868 | refused |
+Refused 5 of 5.
+```
+
+**Did it help?** Yes for the failure it targeted, and no for anything a user
+would see. The withdrawal question's top-ranked chunk is now the correct
+policy, so the top-1 measure went from 4 of 5 to 5 of 5. All five criteria
+were already MET and stayed MET, and the withdrawal answers were already
+correct before the fix: in all three "before" runs the model picked the
+withdrawal file out of the top 5 and said "adviser's signature." So the fix
+corrected the ranking but not the outcome, because generation was already
+compensating for it. I know this because the before and after answers are
+the same, while the #1 chunk changed.
+
+Two side effects:
+- **Morrow's #1 chunk changed** from the laundry file to the laundry/noise
+  paragraph of the main Morrow review. BM25 rewarded that paragraph for
+  repeating more of the question's words ("Morrow House", "laundry", "dry").
+  Both contain the $1.25 price, so the answer didn't change, but keyword
+  matching pulled up a chunk that mixes two topics.
+- **The gate's best distances rose for three out-of-scope questions**
+  (Mongolia 0.795 → 0.817, ibuprofen 0.847 → 0.858, Rust 0.865 → 0.868). The
+  gate uses the smallest distance among the 5 retrieved chunks, and hybrid
+  changes which 5 are retrieved. For Mongolia, the HIST 118 chunk closest in
+  meaning no longer makes the top 5. This made the gate slightly stricter
+  here, and none of my in-scope distances moved.
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
+No criterion is missed after the fix. Known weaknesses I didn't fix:
 
-     Milestone 5. -->
+- **Gate side effect:** hybrid changes which 5 chunks the gate sees, so
+  Mongolia's best distance rose from 0.795 to 0.817. A real question could
+  be wrongly refused the same way. Fix: compute the gate's distance from
+  pure vector search. Not done: no in-scope question was affected.
+- **Morrow's #1 chunk** moved to a laundry-and-noise paragraph. The answer
+  was still right. Not done: changing the keyword weight would be a second
+  change.
+- **`expects` mismatch:** "adviser signature" vs. "adviser's signature"
+  would fail a correct answer under exact matching. Not done: I judged
+  answers by hand.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
 
-     Milestone 5. -->
+- **Criterion 1:** require the *top-ranked* chunk to contain the answer.
+  "Anywhere in the top 5" hid the withdrawal problem.
+- **Criterion 5:** use questions that aren't also test questions and don't
+  name the place exactly as the file title does. Mine couldn't fail.
+- **Criterion 3:** use off-topic questions that sound like campus life,
+  not Mongolia or Rust.
+- In `criteria.md`, criterion 1's reason starts with the template's example
+  and criterion 3's reason ends in an unfinished placeholder. I left both
+  because originals shouldn't change after results exist.
+
+## How I used AI
+**Unit 2 fix.** I had Claude test the BM25 before writing code: plain BM25 failed,
+stemmed BM25 worked, rank fusion tied. I then prompted it to  write the hybrid search in
+`store.py` and and a new file `check_top1.py`. I ran both and confirmed 4/5 -> 5/5.
+
+**4. Reading the rankings.** I had Claude read my run logs to find where the
+withdrawal file ranked. It said 4th, but it had read the "Sources retrieved"
+list, which is alphabetical, not ranked. I checked against my `retrieve`
+output, which showed 2nd (0.424 vs. 0.416), and corrected my diagnosis.
