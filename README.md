@@ -228,42 +228,54 @@ Sources: `housing_calder_annexe.txt` and `housing_calder_annexe_laundry.txt`
 
 ## Verdicts
 
-<!-- MET or MISSED for each of the five, against the target you wrote last
-     unit — not a new one. Plus a sentence on how you decided. That sentence
-     matters most where it was close.
+## Verdicts
 
-     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
-     The target has to hold, not show up occasionally.
-
-     Milestone 2. -->
-
-| # | Criterion | Verdict | How I decided |
-|---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| # | Criterion                                        | Verdict | How I decided                                                                                |
+|------------------------------------------------------|---------|----------------------------------------------------------------------------------------------|
+| 1 | Retrieved chunk contains the answer (4 of 5)     | MET     | 5/5 in all three runs. I checked that the file holding each answer was in the "Sources retrieved" list. It was closest for the withdrawal question: `admin_add_drop_deadline.txt` came back first (0.416) and the correct `admin_withdrawal_deadline.txt` was only 4th, but it was there, so it counts. |
+| 2 | Every answer names a source (5 of 5)             | MET     | All 15 answers name at least one file, in three different formats (inline brackets, a "Source:" line, a bulleted list). This criterion only checks that a file is named, not that it is the right one; criterion 5 covers that. |
+| 3 | Gate stops out-of-corpus questions (4 of 5)      | MET     | All five were refused. The closest was "capital of Mongolia" at 0.795, still 0.195 above the 0.6 cutoff. One deterministic pass, so the same 5/5 goes in every column. |
+| 4 | Every chunk from course/dining/housing files names its subject | MET | `check_criterion4.py` checked all 147 chunks from the 62 files against the name in each file's title: 147 of 147. The chunks don't change between runs, so one measurement covers all three. |
+| 5 | Place-naming questions cite the right place (2 of 3) | MET | 3/3 in every run. The Calder question, the one I expected to fail, cited `housing_calder_annexe...` files every time, and Fenwick's identical laundry file was never even retrieved. |
+|
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+## Diagnoses
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+**No criterion was missed.** All five met their target in all three runs.
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
+**Why my predicted failures didn't happen.** I expected two failures: the
+Morrow House dryer question being crowded out by seven near-identical laundry
+files (criterion 1), and the Calder Annexe question citing Fenwick Court's
+identical laundry file (criterion 5). Neither happened. Morrow's laundry file
+ranked #1 (0.175), and Fenwick was never retrieved for the Calder question.
+Both have the same cause, at the **chunking** stage: `split_documents` puts
+each file's title ("Laundry in Morrow House", "Laundry in Calder Annexe") in
+front of every chunk, so the one word that differs between near-identical
+files, the building name, is in the text the embedding sees.
 
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
+**Near-miss: withdrawal vs. drop (retrieval).** For "What do I need to
+withdraw from a course after the drop deadline has passed?",
+`admin_add_drop_deadline.txt` ranked first (0.416) and the correct
+`admin_withdrawal_deadline.txt` ranked only 4th. The two policies use almost
+the same vocabulary (course, drop, deadline, week), so in embedding space
+they are near neighbours and meaning alone can't separate them. Criterion 1
+passed only because top-k is 5; at top-k 3 this question would have failed.
 
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
+**Near-miss: the test, not the system.** The 'expects' phrase for the
+withdrawal question is "adviser signature", but all three answers say
+"adviser's signature". An exact-match scorer would fail a correct answer.
+This is a flaw in my test question, not in any pipeline stage.
 
-     Milestone 3. -->
+**Were my targets set low? Yes.** Criterion 5 was the safest: two of its
+three questions were also test questions, and each named its place exactly
+as the file title does, so the title prefix made it nearly impossible to
+miss. Criterion 3's out-of-scope questions were all from unrelated worlds,
+so they were easy to refuse. The one I'd tighten first is **criterion 1**:
+"For at least 4 of 5 questions, the top-ranked chunk contains the
+answer." Under that version the withdrawal question fails today, so it would
+be an honest target rather than a safe one.
 
 ## The Improvement
 
