@@ -52,24 +52,16 @@ in at least 4 of 5 tries.
      just keep five of them, or the "4 of 5" above has nothing to be 4 of. -->
 
 **Why this target:**
-<!-- What did your distances look like when you set the cutoff in Milestone 4?
-     Was there a clean gap, or did the two groups overlap? -->
+My in-corpus questions scored 0.149 to 0.416 and my out-of-scope questions scored 0.795 to 0.916, so there is 
+a clean gap and the 0.6 cutoff sits in the middle of it. I expected the ibuprofen question to be the risky one 
+because of `health_center.txt`, but it matched nothing closer than 0.847. [WHY 4 OF 5 AND NOT 5 OF 5 — pick one:]
 
 ---
 
 ## 4. Something about your chunks
 
-<!-- YOU WRITE THIS ONE.
 
-     How would you know if your chunks were the right size? Name something
-     countable or observable.
 
-     Examples of the right shape — don't copy these, they should come from
-     what you actually saw in Milestone 3:
-       - "At least 4 of 5 sampled chunks read as a complete thought, with no
-          sentence cut in half at either end."
-       - "No chunk is shorter than 200 characters, since anything below that
-          in my corpus turned out to be a heading with no content under it." -->
 
 Every chunk that comes from the 62 course, dining, and housing files names the course, dining hall, or building it is about.
 

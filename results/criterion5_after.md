@@ -1,4 +1,10 @@
 
+# Criterion 5 runs — after (hybrid search on)
+
+Produced by `python app.py ask` with `AI201_CACHE=0`. Retrieval: `store.py::search`
+with hybrid search (vector + stemmed BM25). Kestrel Commons and Morrow House come
+from `results/run_2026-10-05_1636_after.md`. This file holds the Calder Annexe runs.
+
 ### How much does laundry cost in Calder Annexe? — run 1
 
   (best distance 0.175, cutoff 0.6)
