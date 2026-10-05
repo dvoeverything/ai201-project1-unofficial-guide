@@ -386,22 +386,16 @@ No criterion is missed after the fix. Known weaknesses I didn't fix:
 ## What I'd Do Differently
 
 
-- **Criterion 1:** require the *top-ranked* chunk to contain the answer.
-  "Anywhere in the top 5" hid the withdrawal problem.
-- **Criterion 5:** use questions that aren't also test questions and don't
-  name the place exactly as the file title does. Mine couldn't fail.
-- **Criterion 3:** use off-topic questions that sound like campus life,
-  not Mongolia or Rust.
-- In `criteria.md`, criterion 1's reason starts with the template's example
-  and criterion 3's reason ends in an unfinished placeholder. I left both
+- **Criterion 1:** require the *top-ranked* chunk to contain the answer.  "Anywhere in the top 5" hid the withdrawal problem.
+- **Criterion 5:** use questions that aren't also test questions and don't name the place exactly as the file title does. Mine couldn't fail.
+- **Criterion 3:** use off-topic questions that sound like campus life,  not Mongolia or Rust.
+- In `criteria.md`, criterion 1's reason starts with the template's example and criterion 3's reason ends in an unfinished placeholder. I left both
   because originals shouldn't change after results exist.
 
 ## How I used AI
-**Unit 2 fix.** I had Claude test the BM25 before writing code: plain BM25 failed,
-stemmed BM25 worked, rank fusion tied. I then prompted it to  write the hybrid search in
-`store.py` and and a new file `check_top1.py`. I ran both and confirmed 4/5 -> 5/5.
+**Unit 2 fix.** I had claude suggest other ways my system might be failing and it suggested running a hybrid search.
+It helped  test the BM25 before writing code: plain BM25 failed, stemmed BM25 worked, rank fusion tied. I then prompted it to  
+write the hybrid search in `store.py` and and a new file `check_top1.py`. I ran both and confirmed 4/5 -> 5/5.
 
-**4. Reading the rankings.** I had Claude read my run logs to find where the
-withdrawal file ranked. It said 4th, but it had read the "Sources retrieved"
-list, which is alphabetical, not ranked. I checked against my `retrieve`
-output, which showed 2nd (0.424 vs. 0.416), and corrected my diagnosis.
+**4. Reading the rankings.** I had Claude read my run logs to find where the withdrawal file ranked. It said 4th, but it had read the "Sources retrieved"
+list, which is alphabetical, not ranked. I checked against my `retrieve` output, which showed 2nd (0.424 vs. 0.416), and corrected my diagnosis.
