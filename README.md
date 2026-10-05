@@ -137,7 +137,6 @@ closest chunk was The Ridgeway Café's hours at 0.847.
 
 ## How I Used AI
 
-## How I Used AI
 
 **1. Writing the chunker.** I decided to split each file on its blank lines
 and put the title line in front of every paragraph, so a chunk like "Expect
@@ -172,7 +171,6 @@ single failure wasn't realistic. I changed the target to "every chunk."
 
 ## Run Log — Before
 
-## Run Log — Before
 
 Criteria 1–3 from `results/run_2026-09-30_1927_before.md` (`run_eval.py::main`).
 Criterion 4 from `check_criterion4.py`. Criterion 5 from the run_eval file
@@ -228,7 +226,6 @@ Sources: `housing_calder_annexe.txt` and `housing_calder_annexe_laundry.txt`
 
 ## Verdicts
 
-## Verdicts
 
 | # | Criterion                                        | Verdict | How I decided                                                                                |
 |------------------------------------------------------|---------|----------------------------------------------------------------------------------------------|
@@ -241,7 +238,6 @@ Sources: `housing_calder_annexe.txt` and `housing_calder_annexe_laundry.txt`
 
 ## Diagnoses
 
-## Diagnoses
 
 **No criterion was missed.** All five met their target in all three runs.
 
@@ -279,16 +275,6 @@ be an honest target rather than a safe one.
 
 ## The Improvement
 
-**What I changed:**
-
-**Why I picked it:**
-
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
-
-### Run Log — After
-
-## The Improvement
 
 **What I changed:** I added hybrid search to `store.py::search`. Each chunk is
 now scored two ways: vector similarity (1 − cosine distance) and a BM25
@@ -325,11 +311,11 @@ Morrow) and `results/criterion5_after.md` (Calder).
 **The measurement the fix targeted: which file ranks #1**
 (`check_top1.py`, saved in `results/top1_before.txt` and `results/top1_after.txt`):
 
-| Question | #1 before (vector only) | #1 after (hybrid) |
-|-------------------|--------------------------------|----------------------------------------------------|
-| Housing lottery   | `admin_housing_lottery.txt` ✅ | `admin_housing_lottery.txt` ✅                     |
+| Question          | #1 before (vector only)           | #1 after (hybrid) |
+|-------------------|-----------------------------------|----------------------------------------------------|
+| Housing lottery   | `admin_housing_lottery.txt` ✅    | `admin_housing_lottery.txt` ✅                     |
 | Kestrel wait      | `dining_kestrel_commons_followup.txt` ✅ | `dining_kestrel_commons_followup.txt` ✅ |
-| Withdrawal        | `admin_add_drop_deadline.txt` ❌ | `admin_withdrawal_deadline.txt` ✅ |
+| Withdrawal        | `admin_add_drop_deadline.txt` ❌  | `admin_withdrawal_deadline.txt` ✅ |
 | Espresso          | `dining_the_ridgeway_cafe.txt` ✅ | `dining_the_ridgeway_cafe.txt` ✅ |
 | Morrow dryer      | `housing_morrow_house_laundry.txt#0` ✅ | `housing_morrow_house.txt#3` ✅ |
 | **Correct at #1** | **4 of 5** | **5 of 5** |
