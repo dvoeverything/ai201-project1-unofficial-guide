@@ -226,14 +226,13 @@ Sources: `housing_calder_annexe.txt` and `housing_calder_annexe_laundry.txt`
 
 ## Verdicts
 
-
-| # | Criterion                                                     | Verdict | How I decided                                                                                                               |
-|-------------------------------------------------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------|
-| 1 | Retrieved chunk contains the answer (4 of 5)                  | MET     | 5/5 in all three runs. I checked that the file holding each answer was in the "Sources retrieved" list. It was closest for the withdrawal question: `admin_add_drop_deadline.txt` came back first (0.416) and the correct `admin_withdrawal_deadline.txt` was only 4th, but it was there, so it counts. |
-| 2 | Every answer names a source (5 of 5)                          | MET     | All 15 answers name at least one file, in three different formats (inline brackets, a "Source:" line, a bulleted list). This criterion only checks that a file is named, not that it is the right one; criterion 5 covers that. |
-| 3 | Gate stops out-of-corpus questions (4 of 5)                   | MET     | All five were refused. The closest was "capital of Mongolia" at 0.795, still 0.195 above the 0.6 cutoff. One deterministic pass, so the same 5/5 goes in every column. |
-| 4 | Every chunk from course/dining/housing files names its subject| MET     | `check_criterion4.py` checked all 147 chunks from the 62 files against the name in each file's title: 147 of 147. The chunks don't change between runs, so one measurement covers all three. |
-| 5 | Place-naming questions cite the right place (2 of 3)          | MET     | 3/3 in every run. The Calder question, the one I expected to fail, cited `housing_calder_annexe...` files every time, and Fenwick's identical laundry file was never even retrieved. |
+| # | Criterion | Verdict | How I decided |
+|---|---|---|---|
+| 1 | Retrieved chunk contains the answer (4 of 5) | MET | 5/5 in all three runs. I checked that the file holding each answer was in the "Sources retrieved" list. It was closest for the withdrawal question: `admin_add_drop_deadline.txt` came back first (0.416) and the correct `admin_withdrawal_deadline.txt` was 2nd (0.424), but it was there, so it counts. |
+| 2 | Every answer names a source (5 of 5) | MET | All 15 answers name at least one file, in three different formats (inline brackets, a "Source:" line, a bulleted list). This criterion only checks that a file is named, not that it is the right one; criterion 5 covers that. |
+| 3 | Gate stops out-of-corpus questions (4 of 5) | MET | All five were refused. The closest was "capital of Mongolia" at 0.795, still 0.195 above the 0.6 cutoff. One deterministic pass, so the same 5/5 goes in every column. |
+| 4 | Every chunk from course/dining/housing files names its subject | MET | `check_criterion4.py` checked all 147 chunks from the 62 files against the name in each file's title: 147 of 147. The chunks don't change between runs, so one measurement covers all three. |
+| 5 | Place-naming questions cite the right place (2 of 3) | MET | 3/3 in every run. The Calder question, the one I expected to fail, cited `housing_calder_annexe...` files every time, and Fenwick's identical laundry file was never even retrieved. |
 
 ## Diagnoses
 
