@@ -199,6 +199,9 @@ def search(
             f"No index called '{name}'. Run `python app.py index` first."
         ) from exc
 
+    if HYBRID:
+        return _hybrid_search(question, top_k, collection)
+
     raw = collection.query(
         query_embeddings=embed([question]),
         n_results=min(top_k, collection.count()),
@@ -218,6 +221,81 @@ def search(
             )
         )
     return results
+
+
+# ─── Unit 2 improvement: hybrid search ───────────────────────────────────────
+#
+# Diagnosis it targets: for "What do I need to withdraw from a course after the
+# drop deadline has passed?", vector search ranks admin_add_drop_deadline.txt
+# first (0.416) and the correct admin_withdrawal_deadline.txt second (0.424).
+# The two policies mean almost the same thing, so meaning alone can't separate
+# them. A keyword search can, but only with stemming: the question says
+# "withdraw" and the file says "withdrawal", and without stemming those don't
+# match.
+#
+# What it does: scores every chunk two ways — vector similarity (1 - cosine
+# distance) and BM25 keyword score over stemmed words — rescales each to 0..1,
+# and ranks by the average. Score fusion rather than rank fusion (RRF) on
+# purpose: with RRF the two deadline files come out exactly tied.
+#
+# What it does NOT change: each Result still carries its real vector distance,
+# so the relevance gate and the 0.6 cutoff work exactly as before.
+#
+# Turn it off with AI201_HYBRID=0 to reproduce the "before" system.
+
+HYBRID = os.getenv("AI201_HYBRID", "1") != "0"
+HYBRID_WEIGHT = 0.5  # share of the score that comes from vector similarity
+
+
+def _stem_tokens(text: str) -> list[str]:
+    import re
+
+    from nltk.stem import PorterStemmer
+
+    stemmer = PorterStemmer()
+    return [stemmer.stem(w) for w in re.findall(r"[a-z0-9]+", text.lower())]
+
+
+def _rescale(values: list[float]) -> list[float]:
+    low, high = min(values), max(values)
+    if high == low:
+        return [0.0 for _ in values]
+    return [(v - low) / (high - low) for v in values]
+
+
+def _hybrid_search(question: str, top_k: int, collection) -> list[Result]:
+    from rank_bm25 import BM25Okapi
+
+    total = collection.count()
+
+    # Vector side: score every chunk (the corpus is small, 183 chunks).
+    raw = collection.query(query_embeddings=embed([question]), n_results=total)
+    docs = raw["documents"][0]
+    metas = raw["metadatas"][0]
+    distances = [float(d) for d in raw["distances"][0]]
+
+    # Keyword side: BM25 over the same chunks, with stemmed words.
+    bm25 = BM25Okapi([_stem_tokens(d) for d in docs])
+    keyword = list(bm25.get_scores(_stem_tokens(question)))
+
+    vector = _rescale([1.0 - d for d in distances])
+    keyword = _rescale(keyword)
+    combined = [
+        HYBRID_WEIGHT * v + (1 - HYBRID_WEIGHT) * k for v, k in zip(vector, keyword)
+    ]
+
+    order = sorted(range(len(docs)), key=lambda i: combined[i], reverse=True)[:top_k]
+
+    return [
+        Result(
+            text=docs[i],
+            source=str(metas[i].get("source", "unknown")),
+            label=f"{metas[i].get('source', 'unknown')}#{metas[i].get('index', 0)}",
+            distance=distances[i],
+            produced_by=str(metas[i].get("produced_by", "unknown")),
+        )
+        for i in order
+    ]
 
 
 def index_exists(corpus: str | None = None, variant: str = "default") -> bool:

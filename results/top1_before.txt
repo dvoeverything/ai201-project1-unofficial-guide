@@ -1,0 +1,9 @@
+Hybrid search: OFF
+
+✅  #1 = admin_housing_lottery.txt#0              (distance 0.149)  Is the housing lottery random for juniors and seniors?
+✅  #1 = dining_kestrel_commons_followup.txt#0    (distance 0.176)  How long is the wait at Kestrel Commons during the lunch rush?
+❌  #1 = admin_add_drop_deadline.txt#0            (distance 0.416)  What do I need to withdraw from a course after the drop deadline has passed?
+✅  #1 = dining_the_ridgeway_cafe.txt#0           (distance 0.373)  Where on campus can I get real espresso?
+✅  #1 = housing_morrow_house_laundry.txt#0       (distance 0.175)  How much does it cost to dry a load of laundry in Morrow House?
+
+Top-ranked chunk is the right file: 4 of 5
